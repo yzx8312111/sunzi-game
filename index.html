@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>孫子兵法填字大挑戰 - 積分優化版</title>
+    <style>
+        :root {
+            --bg-color: #FFFF00;
+            --text-color: #000000;
+            --box-red: #FF0000;
+            --box-blue: #0000FF;
+            --white: #FFFFFF;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+            background-color: var(--bg-color);
+            overflow: hidden;
+            transition: background-color 0.2s;
+        }
+
+        .hidden { display: none !important; }
+
+        /* 初始畫面 */
+        #start-screen {
+            width: 100%; height: 100%; display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-start; overflow-y: auto;
+            padding: 20px; box-sizing: border-box;
+        }
+
+        .header-section { text-align: center; margin-bottom: 15px; width: 100%; flex-shrink: 0; }
+        .game-title { font-size: 26px; font-weight: bold; margin-bottom: 8px; }
+        .stars { color: var(--box-red); font-weight: bold; }
+
+        .form-section {
+            width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%; padding: 12px; font-size: 18px; border: 2px solid #000;
+            text-align: center; box-sizing: border-box; border-radius: 5px;
+            background-color: #fff;
+        }
+
+        button#start-btn {
+            width: 100%; padding: 15px; font-size: 20px; font-weight: bold;
+            background-color: #000; color: #fff; border: none; border-radius: 8px; cursor: pointer;
+        }
+
+        /* 遊戲畫面 */
+        #game-screen { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+        #question-area {
+            position: absolute; 
+            top: 50px; 
+            width: 100%;
+            height: 45%; 
+            display: flex;
+            flex-direction: column-reverse; 
+            justify-content: flex-start; 
+            align-items: center; 
+            gap: 12px;
+            overflow: hidden;
+        }
+
+        .question-row {
+            font-size: 22px; font-weight: bold; color: #000;
+            width: 95%; text-align: center; line-height: 1.4;
+            position: relative;
+            background: rgba(255,255,255,0.4);
+            border-radius: 10px;
+            padding: 8px 0;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .q-box {
+            display: inline-block; width: 34px; height: 34px;
+            background-color: var(--box-red); color: var(--white);
+            text-align: center; line-height: 34px; margin: 0 3px;
+            border-radius: 4px; cursor: pointer; vertical-align: middle;
+        }
+
+        .q-box.selected {
+            background-color: var(--box-blue) !important;
+            box-shadow: 0 0 12px var(--box-blue);
+            animation: blink-animation 0.6s infinite;
+        }
+
+        @keyframes blink-animation {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        #input-zone {
+            position: absolute; bottom: 30%; width: 100%;
+            display: flex; justify-content: center; align-items: center; gap: 15px;
+        }
+
+        #answer-input { 
+            width: 80px; height: 80px; font-size: 40px; text-align: center; 
+            border: 3px solid #000; border-radius: 12px;
+            box-shadow: 6px 6px 0px #000;
+        }
+
+        .feedback { font-size: 50px; font-weight: bold; width: 60px; text-align: center; }
+
+        #footer-zone {
+            position: absolute; bottom: 0; height: 15%; width: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            font-size: 18px; font-weight: bold; background: rgba(0,0,0,0.05);
+        }
+
+        .pop-anim {
+            position: absolute; font-weight: bold; font-size: 32px;
+            pointer-events: none; animation: popUp 0.8s forwards;
+            text-shadow: 2px 2px 0 #fff;
+        }
+        @keyframes popUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-100px) scale(1.8); }
+        }
+
+        .flash-red { background-color: #ffcccc !important; }
+        .flash-green { background-color: #ccffcc !important; }
+
+        #end-screen {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center;
+        }
+        .final-score-text { font-size: 85px; font-weight: bold; color: #FF0000; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <div class="header-section">
+            <div class="game-title">孫子兵法填字大挑戰</div>
+            <div style="line-height: 1.6; font-size: 15px;">
+                <span class="stars">＊＊＊＊＊＊＊＊＊＊</span><br>
+                點選紅色方格，輸入正確的字<br>
+                <span class="stars">＊＊＊＊＊＊＊＊＊＊</span><br>
+                答對最新題目得 <b style="color:blue">５</b> 分<br>
+                答對舊題目依序得 <b style="color:blue">４～１</b> 分<br>
+                漏答而消失的題目扣 <b style="color:red">１</b> 分<br>
+                <span class="stars">＊＊＊＊＊＊＊＊＊＊</span>
+            </div>
+        </div>
+        <div class="form-section">
+            <input type="text" id="class-in" placeholder="請輸入班級">
+            <input type="text" id="name-in" placeholder="請輸入姓名">
+            <input type="text" id="id-in" placeholder="請輸入學號">
+            <input type="text" id="code-in" placeholder="通關代碼">
+            <button id="start-btn">開始挑戰</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <div id="question-area"></div>
+        <div id="input-zone">
+            <div id="mark-x" class="feedback" style="color:red"></div>
+            <input type="text" id="answer-input" maxlength="1" autocomplete="off" placeholder="填">
+            <div id="mark-v" class="feedback" style="color:green"></div>
+        </div>
+        <div id="footer-zone">
+            <div id="timer-disp">剩餘時間：180</div>
+            <div id="score-disp">總得分：0</div>
+        </div>
+    </div>
+
+    <div id="end-screen" class="hidden">
+        <div style="font-size: 24px; font-weight: bold;">挑戰結束！您的總分</div>
+        <div class="final-score-text" id="final-score">0</div>
+        <div id="final-info" style="font-size: 18px; line-height: 2;"></div>
+        <div id="final-time" style="font-size: 16px; margin-top: 20px; font-style: italic;"></div>
+        <button onclick="location.reload()" style="margin-top:20px; padding:12px 25px; font-size:16px; cursor:pointer;">再次挑戰</button>
+    </div>
+
+    <script>
+        const sentences = [
+            "孫子曰：兵者，國之大事也。", "死生之地，存亡之道，不可不察也。", "故經之以五事，校之以計，而索其情。",
+            "一曰道，二曰天，三曰地，", "四曰將，五曰法。", "道者，令民與上同意也。",
+            "故可與之死，可與之生，而不畏危也。", "天者，陰陽、寒暑、時制也。", "地者，高下、遠近、險易、廣狹、死生也。",
+            "將者，智、信、仁、勇、嚴也。", "法者，曲制、官道、主用也。", "凡此五者，將莫不聞，知之者勝，不知者不勝。",
+            "故校之以計，而索其情。", "主孰有道？", "將孰有能？", "天地孰得？", "法令孰行？", "兵眾孰強？",
+            "士卒孰練？", "賞罰孰明？", "吾以此知勝負矣。", "將聽吾計，用之必勝，留之。", "將不聽吾計，用之必敗，去之。",
+            "計利以聽，乃為之勢，以佐其外。", "勢者，因利而制權也。", "兵者，詭道也。", "能而示之不能。",
+            "用而示之不用。", "近而示之遠。", "遠而示之近。", "利而誘之。", "亂而取之。", "實而備之。",
+            "強而避之。", "怒而撓之。", "卑而驕之。", "佚而勞之。", "親而離之。", "攻其無備，出其不意。",
+            "此兵家之勝，不可先傳也。", "夫未戰而廟算勝者，得算多也。", "未戰而廟算不勝者，得算少也。",
+            "多算勝，少算不勝，而況於無算乎。", "吾以此觀之，勝負見矣。"
+        ];
+
+        const filter = ["曰","者","之","也","而","其","孰","矣","，","、","：","。","？"];
+        let score = 0, timeLeft = 180, activeQs = [];
+        let selectedId = null, gameTimer, spawnTimer;
+        let isProcessing = false;
+        let isComposing = false;
+
+        document.getElementById('start-btn').addEventListener('click', function() {
+            if (['class-in', 'name-in', 'id-in', 'code-in'].some(id => !document.getElementById(id).value)) {
+                alert("請填寫所有欄位");
+                return;
+            }
+            startGame();
+        });
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            activeQs = []; score = 0; timeLeft = 180;
+            spawn();
+            
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer-disp').innerText = `剩餘時間：${timeLeft}`;
+                if (timeLeft <= 0) endGame();
+            }, 1000);
+
+            spawnTimer = setInterval(() => {
+                if (activeQs.length > 0) {
+                    activeQs[0].timer++; 
+                    if (activeQs[0].timer >= 7) spawn();
+                }
+            }, 1000);
+        }
+
+        function spawn() {
+            let pool = sentences.filter(s => !activeQs.some(q => q.text === s));
+            if (pool.length === 0) pool = sentences;
+            let str = pool[Math.floor(Math.random() * pool.length)];
+            let chars = [];
+            for(let i=0; i<str.length; i++) if(!filter.includes(str[i])) chars.push(i);
+            let targetIdx = chars[Math.floor(Math.random() * chars.length)];
+            
+            const newQ = { id: Date.now(), text: str, ans: str[targetIdx], pos: targetIdx, timer: 0 };
+            activeQs.unshift(newQ);
+            
+            if (activeQs.length > 5) {
+                activeQs.pop();
+                score -= 1;
+                triggerFlash('flash-red');
+                showTextAnim("-1", "red", "footer-zone");
+            }
+            render();
+        }
+
+        function render() {
+            const area = document.getElementById('question-area');
+            area.innerHTML = '';
+            activeQs.forEach((q) => {
+                const row = document.createElement('div');
+                row.className = 'question-row';
+                row.id = "row-" + q.id;
+                let parts = q.text.split('');
+                let isSelected = (q.id === selectedId);
+                parts[q.pos] = `<span class="q-box ${isSelected ? 'selected' : ''}" onclick="selectQ(${q.id})">?</span>`;
+                row.innerHTML = parts.join('');
+                area.appendChild(row);
+            });
+            document.getElementById('score-disp').innerText = `總得分：${score}`;
+        }
+
+        function selectQ(id) {
+            selectedId = id;
+            render();
+            document.getElementById('answer-input').focus();
+        }
+
+        const inputEl = document.getElementById('answer-input');
+        inputEl.addEventListener('compositionstart', () => { isComposing = true; });
+        inputEl.addEventListener('compositionend', (e) => {
+            isComposing = false;
+            checkAnswer(e.data);
+        });
+
+        inputEl.addEventListener('input', (e) => {
+            if (isComposing) return;
+            if (e.target.value) checkAnswer(e.target.value);
+        });
+
+        function checkAnswer(val) {
+            if (!val || !selectedId || isProcessing) return;
+            isProcessing = true;
+            
+            const idx = activeQs.findIndex(q => q.id === selectedId);
+            const q = activeQs[idx];
+
+            if (q && val === q.ans) {
+                // 優化核心：根據堆疊位置給分 (5, 4, 3, 2, 1)
+                // idx 0 是最新，idx 4 是最舊
+                const pts = Math.max(1, 5 - idx); 
+                
+                score += pts;
+                triggerFlash('flash-green');
+                showTextAnim("+" + pts, "blue", "row-" + q.id);
+                document.getElementById('mark-v').innerText = "Ｖ";
+                activeQs.splice(idx, 1);
+                selectedId = null; 
+                setTimeout(() => { 
+                    document.getElementById('mark-v').innerText = ""; 
+                    if (activeQs.length === 0) spawn();
+                    render(); 
+                    isProcessing = false;
+                }, 400);
+            } else {
+                document.getElementById('mark-x').innerText = "Ｘ";
+                triggerFlash('flash-red');
+                setTimeout(() => { 
+                    document.getElementById('mark-x').innerText = ""; 
+                    isProcessing = false;
+                }, 400);
+            }
+            inputEl.value = '';
+        }
+
+        function triggerFlash(cls) {
+            document.body.classList.add(cls);
+            setTimeout(() => document.body.classList.remove(cls), 200);
+        }
+
+        function showTextAnim(txt, color, parentId) {
+            const anim = document.createElement('div');
+            anim.className = 'pop-anim';
+            anim.innerText = txt;
+            anim.style.color = color;
+            const parent = document.getElementById(parentId) || document.getElementById('footer-zone');
+            parent.appendChild(anim);
+            setTimeout(() => anim.remove(), 800);
+        }
+
+        function endGame() {
+            clearInterval(gameTimer); clearInterval(spawnTimer);
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-info').innerHTML = `
+                班級：${document.getElementById('class-in').value} | 姓名：${document.getElementById('name-in').value}<br>
+                學號：${document.getElementById('id-in').value} | 代碼：${document.getElementById('code-in').value}
+            `;
+            const d = new Date();
+            document.getElementById('final-time').innerText = "測驗時間：" + d.toLocaleString();
+        }
+    </script>
+</body>
+</html>
