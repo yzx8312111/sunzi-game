@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>孫子兵法填字大挑戰 - 積分優化版</title>
+    <title>孫子兵法填字大挑戰 - 行動優化版</title>
     <style>
         :root {
             --bg-color: #FFFF00;
@@ -17,8 +17,7 @@
             margin: 0; padding: 0; width: 100%; height: 100%;
             font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
             background-color: var(--bg-color);
-            overflow: hidden;
-            transition: background-color 0.2s;
+            overflow: hidden; /* 防止鍵盤彈出造成網頁晃動 */
         }
 
         .hidden { display: none !important; }
@@ -26,100 +25,105 @@
         /* 初始畫面 */
         #start-screen {
             width: 100%; height: 100%; display: flex; flex-direction: column;
-            align-items: center; justify-content: flex-start; overflow-y: auto;
+            align-items: center; justify-content: center;
             padding: 20px; box-sizing: border-box;
         }
 
-        .header-section { text-align: center; margin-bottom: 15px; width: 100%; flex-shrink: 0; }
-        .game-title { font-size: 26px; font-weight: bold; margin-bottom: 8px; }
-        .stars { color: var(--box-red); font-weight: bold; }
-
-        .form-section {
-            width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 10px;
-        }
-
+        .game-title { font-size: 24px; font-weight: bold; margin-bottom: 15px; }
+        .form-section { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 8px; }
+        
         input[type="text"] {
-            width: 100%; padding: 12px; font-size: 18px; border: 2px solid #000;
-            text-align: center; box-sizing: border-box; border-radius: 5px;
-            background-color: #fff;
+            padding: 10px; font-size: 16px; border: 2px solid #000;
+            text-align: center; border-radius: 5px;
         }
 
         button#start-btn {
-            width: 100%; padding: 15px; font-size: 20px; font-weight: bold;
-            background-color: #000; color: #fff; border: none; border-radius: 8px; cursor: pointer;
+            padding: 12px; font-size: 18px; font-weight: bold;
+            background-color: #000; color: #fff; border: none; border-radius: 8px;
         }
 
-        /* 遊戲畫面 */
-        #game-screen { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; }
-
-        #question-area {
-            position: absolute; 
-            top: 50px; 
+        /* 遊戲畫面佈局優化 */
+        #game-screen { 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
             width: 100%;
-            height: 45%; 
+        }
+
+        /* 題目區域：最新題目在最下方，靠近輸入框 */
+        #question-area {
+            flex: 1; 
             display: flex;
             flex-direction: column-reverse; 
-            justify-content: flex-start; 
-            align-items: center; 
-            gap: 12px;
-            overflow: hidden;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 6px;
+            padding: 10px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .question-row {
-            font-size: 22px; font-weight: bold; color: #000;
-            width: 95%; text-align: center; line-height: 1.4;
-            position: relative;
-            background: rgba(255,255,255,0.4);
-            border-radius: 10px;
-            padding: 8px 0;
-            border: 1px solid rgba(0,0,0,0.1);
+            font-size: 16px; /* 18個中文字約佔滿手機寬度 */
+            font-weight: bold;
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+            background: rgba(255,255,255,0.5);
+            border-radius: 6px;
+            padding: 5px 0;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .q-box {
-            display: inline-block; width: 34px; height: 34px;
+            display: inline-block; width: 26px; height: 26px;
             background-color: var(--box-red); color: var(--white);
-            text-align: center; line-height: 34px; margin: 0 3px;
+            text-align: center; line-height: 26px; margin: 0 2px;
             border-radius: 4px; cursor: pointer; vertical-align: middle;
         }
 
         .q-box.selected {
             background-color: var(--box-blue) !important;
-            box-shadow: 0 0 12px var(--box-blue);
-            animation: blink-animation 0.6s infinite;
+            box-shadow: 0 0 8px var(--box-blue);
+            animation: blink 0.6s infinite;
         }
 
-        @keyframes blink-animation {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.15); }
+        @keyframes blink {
+            50% { transform: scale(1.1); }
         }
 
+        /* 輸入區域：縮小體積，固定在鍵盤上方視點 */
         #input-zone {
-            position: absolute; bottom: 30%; width: 100%;
+            height: 70px;
             display: flex; justify-content: center; align-items: center; gap: 15px;
+            background: rgba(255,255,255,0.9);
+            border-top: 1px solid rgba(0,0,0,0.1);
         }
 
         #answer-input { 
-            width: 80px; height: 80px; font-size: 40px; text-align: center; 
-            border: 3px solid #000; border-radius: 12px;
-            box-shadow: 6px 6px 0px #000;
+            width: 50px; height: 50px; font-size: 32px; text-align: center; 
+            border: 3px solid #000; border-radius: 10px;
+            background-color: #fff;
         }
 
-        .feedback { font-size: 50px; font-weight: bold; width: 60px; text-align: center; }
+        .feedback { font-size: 30px; font-weight: bold; width: 40px; text-align: center; }
 
+        /* 底部資訊欄 */
         #footer-zone {
-            position: absolute; bottom: 0; height: 15%; width: 100%;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            font-size: 18px; font-weight: bold; background: rgba(0,0,0,0.05);
+            height: 40px;
+            display: flex; justify-content: space-around; align-items: center;
+            font-size: 14px; font-weight: bold; background: #000; color: #fff;
         }
 
+        /* 動效與其他 */
         .pop-anim {
-            position: absolute; font-weight: bold; font-size: 32px;
-            pointer-events: none; animation: popUp 0.8s forwards;
-            text-shadow: 2px 2px 0 #fff;
+            position: absolute; font-weight: bold; font-size: 24px;
+            pointer-events: none; animation: popUp 0.6s forwards;
         }
         @keyframes popUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-100px) scale(1.8); }
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
         }
 
         .flash-red { background-color: #ffcccc !important; }
@@ -128,28 +132,17 @@
         #end-screen {
             display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center;
         }
-        .final-score-text { font-size: 85px; font-weight: bold; color: #FF0000; margin: 10px 0; }
+        .final-score-text { font-size: 70px; font-weight: bold; color: #FF0000; }
     </style>
 </head>
 <body>
 
     <div id="start-screen">
-        <div class="header-section">
-            <div class="game-title">孫子兵法填字大挑戰</div>
-            <div style="line-height: 1.6; font-size: 15px;">
-                <span class="stars">＊＊＊＊＊＊＊＊＊＊</span><br>
-                點選紅色方格，輸入正確的字<br>
-                <span class="stars">＊＊＊＊＊＊＊＊＊＊</span><br>
-                答對最新題目得 <b style="color:blue">５</b> 分<br>
-                答對舊題目依序得 <b style="color:blue">４～１</b> 分<br>
-                漏答而消失的題目扣 <b style="color:red">１</b> 分<br>
-                <span class="stars">＊＊＊＊＊＊＊＊＊＊</span>
-            </div>
-        </div>
+        <div class="game-title">孫子兵法填字挑戰</div>
         <div class="form-section">
-            <input type="text" id="class-in" placeholder="請輸入班級">
-            <input type="text" id="name-in" placeholder="請輸入姓名">
-            <input type="text" id="id-in" placeholder="請輸入學號">
+            <input type="text" id="class-in" placeholder="班級">
+            <input type="text" id="name-in" placeholder="姓名">
+            <input type="text" id="id-in" placeholder="學號">
             <input type="text" id="code-in" placeholder="通關代碼">
             <button id="start-btn">開始挑戰</button>
         </div>
@@ -163,17 +156,16 @@
             <div id="mark-v" class="feedback" style="color:green"></div>
         </div>
         <div id="footer-zone">
-            <div id="timer-disp">剩餘時間：180</div>
-            <div id="score-disp">總得分：0</div>
+            <div id="timer-disp">時間：180</div>
+            <div id="score-disp">總分：0</div>
         </div>
     </div>
 
     <div id="end-screen" class="hidden">
-        <div style="font-size: 24px; font-weight: bold;">挑戰結束！您的總分</div>
+        <div style="font-size: 20px; font-weight: bold;">挑戰結束！您的總分</div>
         <div class="final-score-text" id="final-score">0</div>
-        <div id="final-info" style="font-size: 18px; line-height: 2;"></div>
-        <div id="final-time" style="font-size: 16px; margin-top: 20px; font-style: italic;"></div>
-        <button onclick="location.reload()" style="margin-top:20px; padding:12px 25px; font-size:16px; cursor:pointer;">再次挑戰</button>
+        <div id="final-info" style="font-size: 16px; line-height: 1.6;"></div>
+        <button onclick="location.reload()" style="margin-top:20px; padding:10px 20px;">再次挑戰</button>
     </div>
 
     <script>
@@ -199,8 +191,7 @@
 
         document.getElementById('start-btn').addEventListener('click', function() {
             if (['class-in', 'name-in', 'id-in', 'code-in'].some(id => !document.getElementById(id).value)) {
-                alert("請填寫所有欄位");
-                return;
+                alert("請填寫所有欄位"); return;
             }
             startGame();
         });
@@ -208,19 +199,16 @@
         function startGame() {
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
-            activeQs = []; score = 0; timeLeft = 180;
             spawn();
-            
             gameTimer = setInterval(() => {
                 timeLeft--;
-                document.getElementById('timer-disp').innerText = `剩餘時間：${timeLeft}`;
+                document.getElementById('timer-disp').innerText = `時間：${timeLeft}`;
                 if (timeLeft <= 0) endGame();
             }, 1000);
-
             spawnTimer = setInterval(() => {
                 if (activeQs.length > 0) {
                     activeQs[0].timer++; 
-                    if (activeQs[0].timer >= 7) spawn();
+                    if (activeQs[0].timer >= 6) spawn();
                 }
             }, 1000);
         }
@@ -238,10 +226,10 @@
             
             if (activeQs.length > 5) {
                 activeQs.pop();
-                score -= 1;
+                score = Math.max(0, score - 1);
                 triggerFlash('flash-red');
-                showTextAnim("-1", "red", "footer-zone");
             }
+            if (!selectedId) selectedId = newQ.id; // 自動選取新題目
             render();
         }
 
@@ -258,7 +246,7 @@
                 row.innerHTML = parts.join('');
                 area.appendChild(row);
             });
-            document.getElementById('score-disp').innerText = `總得分：${score}`;
+            document.getElementById('score-disp').innerText = `總分：${score}`;
         }
 
         function selectQ(id) {
@@ -273,7 +261,6 @@
             isComposing = false;
             checkAnswer(e.data);
         });
-
         inputEl.addEventListener('input', (e) => {
             if (isComposing) return;
             if (e.target.value) checkAnswer(e.target.value);
@@ -282,34 +269,29 @@
         function checkAnswer(val) {
             if (!val || !selectedId || isProcessing) return;
             isProcessing = true;
-            
             const idx = activeQs.findIndex(q => q.id === selectedId);
             const q = activeQs[idx];
 
-            if (q && val === q.ans) {
-                // 優化核心：根據堆疊位置給分 (5, 4, 3, 2, 1)
-                // idx 0 是最新，idx 4 是最舊
+            if (q && val.trim() === q.ans) {
                 const pts = Math.max(1, 5 - idx); 
-                
                 score += pts;
                 triggerFlash('flash-green');
-                showTextAnim("+" + pts, "blue", "row-" + q.id);
                 document.getElementById('mark-v').innerText = "Ｖ";
                 activeQs.splice(idx, 1);
-                selectedId = null; 
+                selectedId = activeQs.length > 0 ? activeQs[0].id : null;
                 setTimeout(() => { 
                     document.getElementById('mark-v').innerText = ""; 
                     if (activeQs.length === 0) spawn();
                     render(); 
                     isProcessing = false;
-                }, 400);
+                }, 300);
             } else {
                 document.getElementById('mark-x').innerText = "Ｘ";
                 triggerFlash('flash-red');
                 setTimeout(() => { 
                     document.getElementById('mark-x').innerText = ""; 
                     isProcessing = false;
-                }, 400);
+                }, 300);
             }
             inputEl.value = '';
         }
@@ -319,27 +301,15 @@
             setTimeout(() => document.body.classList.remove(cls), 200);
         }
 
-        function showTextAnim(txt, color, parentId) {
-            const anim = document.createElement('div');
-            anim.className = 'pop-anim';
-            anim.innerText = txt;
-            anim.style.color = color;
-            const parent = document.getElementById(parentId) || document.getElementById('footer-zone');
-            parent.appendChild(anim);
-            setTimeout(() => anim.remove(), 800);
-        }
-
         function endGame() {
             clearInterval(gameTimer); clearInterval(spawnTimer);
             document.getElementById('game-screen').classList.add('hidden');
             document.getElementById('end-screen').classList.remove('hidden');
             document.getElementById('final-score').innerText = score;
             document.getElementById('final-info').innerHTML = `
-                班級：${document.getElementById('class-in').value} | 姓名：${document.getElementById('name-in').value}<br>
-                學號：${document.getElementById('id-in').value} | 代碼：${document.getElementById('code-in').value}
+                ${document.getElementById('class-in').value} ${document.getElementById('name-in').value}<br>
+                學號：${document.getElementById('id-in').value}
             `;
-            const d = new Date();
-            document.getElementById('final-time').innerText = "測驗時間：" + d.toLocaleString();
         }
     </script>
 </body>
